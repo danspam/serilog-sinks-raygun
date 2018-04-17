@@ -62,7 +62,7 @@ namespace Serilog.Sinks.Raygun
             string tagsProperty = "Tags")
         {
             if (string.IsNullOrEmpty(applicationKey))
-                throw new ArgumentNullException("applicationKey");
+                throw new ArgumentNullException(nameof(applicationKey));
 
             _formatProvider = formatProvider;
             _userNameProperty = userNameProperty;
@@ -84,32 +84,44 @@ namespace Serilog.Sinks.Raygun
         public void Emit(LogEvent logEvent)
         {
             //Include the log level as a tag.
-            var tags = _tags.Concat(new[] { logEvent.Level.ToString() }).ToList();
+            var tags = _tags.Concat(new[] {logEvent.Level.ToString()}).ToList();
 
             var properties = logEvent.Properties
-                         .Select(pv => new { Name = pv.Key, Value = RaygunPropertyFormatter.Simplify(pv.Value) })
-                         .ToDictionary(a => a.Name, b => b.Value);
+                .Select(pv => new {Name = pv.Key, Value = RaygunPropertyFormatter.Simplify(pv.Value)})
+                .ToDictionary(a => a.Name, b => b.Value);
+
+            var renderedMessage = logEvent.RenderMessage(_formatProvider);
 
             // Add the message
-            properties.Add("RenderedLogMessage", logEvent.RenderMessage(_formatProvider));
+            properties.Add("RenderedLogMessage", renderedMessage);
             properties.Add("LogMessageTemplate", logEvent.MessageTemplate.Text);
 
             // Create new message
-            var raygunMessage = new RaygunMessage
+            var raygunMessage = new RaygunMessage()
             {
                 OccurredOn = logEvent.Timestamp.UtcDateTime
             };
 
             // Add exception when available
             if (logEvent.Exception != null)
+            {
                 raygunMessage.Details.Error = RaygunErrorMessageBuilder.Build(logEvent.Exception);
+            }
+            else
+            {
+                raygunMessage.Details.Error.Message = renderedMessage;
+
+                if (properties.TryGetValue("SourceContext", out var context))
+                    raygunMessage.Details.Error.ClassName = context.ToString();
+            }
 
             // Add user when requested
             if (!string.IsNullOrWhiteSpace(_userNameProperty) &&
                 logEvent.Properties.ContainsKey(_userNameProperty) &&
                 logEvent.Properties[_userNameProperty] != null)
             {
-                raygunMessage.Details.User = new RaygunIdentifierMessage(logEvent.Properties[_userNameProperty].ToString());
+                raygunMessage.Details.User =
+                    new RaygunIdentifierMessage(logEvent.Properties[_userNameProperty].ToString());
             }
 
             // Add version when requested
@@ -126,14 +138,20 @@ namespace Serilog.Sinks.Raygun
             raygunMessage.Details.UserCustomData = properties;
             raygunMessage.Details.MachineName = Environment.MachineName;
 
+            raygunMessage.Details.Client = new RaygunClientMessage
+            {
+                Name = "Serilog.Sinks.Raygun",
+                ClientUrl = "https://github.com/serilog/serilog-sinks-raygun"
+            };
+
             // Add the custom group key when provided
             if (properties.TryGetValue(_groupKeyProperty, out var customKey))
                 raygunMessage.Details.GroupingKey = customKey.ToString();
 
             // Add additional custom tags
-            if (properties.TryGetValue(_tagsProperty, out var eventTags) && eventTags is object[])
+            if (properties.TryGetValue(_tagsProperty, out var eventTags) && eventTags is object[] objects)
             {
-                foreach (var tag in (object[])eventTags)
+                foreach (var tag in objects)
                     raygunMessage.Details.Tags.Add(tag.ToString());
             }
 
