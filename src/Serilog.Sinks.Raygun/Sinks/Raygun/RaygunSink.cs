@@ -156,8 +156,8 @@ namespace Serilog.Sinks.Raygun
             }
 
             // Submit
-            _client.Send(raygunMessage).Wait();
 
+            _client.SendInBackground(raygunMessage);
         }
     }
 }
