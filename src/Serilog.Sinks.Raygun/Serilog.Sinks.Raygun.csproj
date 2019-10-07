@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net46;net461</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Michiel van Oudheusden</Authors>
     <Company>Serilog</Company>
     <Product>Serilog.Sinks.Raygun</Product>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <Description>Send log events to custom topics in Azure Event Grid</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://serilog.net</PackageProjectUrl>
     <PackageIconUrl>http://serilog.net/images/serilog-sink-nuget.png</PackageIconUrl>
     <RepositoryType>git</RepositoryType>
@@ -14,18 +15,26 @@
     <PackageTags>serilog sink raygun</PackageTags>
     <Copyright>Copyright © Serilog Contributors 2017</Copyright>
 	  <Description>Serilog event sink that writes to the Raygun.io service. Updated to enforce use of aspnet core and improved logging payload.</Description>
-    <Version>3.0.2</Version>
-    <AssemblyVersion>3.0.2.0</AssemblyVersion>
-    <FileVersion>3.0.2.0</FileVersion>
+    <Version>3.0.3</Version>
+    <AssemblyVersion>3.0.3.0</AssemblyVersion>
+    <FileVersion>3.0.3.0</FileVersion>
     <PackageId>Serilog.Sinks.Raygun.Core</PackageId>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="Mindscape.Raygun4Net" Version="5.*" />
+  </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="Mindscape.Raygun4Net" Version="5.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="mindscape.Raygun4Net.AspNetCore" Version="6.*" />
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="mindscape.Raygun4Net.AspNetCore" Version="6.0.0" />
-	  <PackageReference Include="Serilog" Version="2.7.1" />
-	  <PackageReference Include="System.Net.Http" Version="4.3.3" />
+	<PackageReference Include="Serilog" Version="2.*" />
   </ItemGroup>
 
 </Project>

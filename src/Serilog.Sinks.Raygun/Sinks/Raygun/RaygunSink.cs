@@ -16,7 +16,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mindscape.Raygun4Net;
+#if NETSTANDARD2_0
 using Mindscape.Raygun4Net.AspNetCore;
+#else
+using Mindscape.Raygun4Net.Builders;
+using Mindscape.Raygun4Net.Messages;
+#endif
 using Serilog.Core;
 using Serilog.Events;
 
